@@ -3,7 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
-#include "mycode.h"
+#include "head.h"
 
 #define TRAINC 2000000000                                         /* 训练次数上限 */
 

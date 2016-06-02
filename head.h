@@ -1,6 +1,5 @@
-#ifndef MYCODE_H
-#define MYCODE_H
-
+#ifndef HEAD_H
+#define HEAD_H
 
 #define DATA  23                                 /* 训练样本的数量 */
 #define IN 4                                     /* 每个样本有多少输入变量 */
@@ -21,4 +20,4 @@ void comput_output(int var);                     /* BP中用于计算神经网�
 
 void ga_interface(void);                         /* 遗传算法调用接口 */
 
-#endif /* MYCODE_H */
+#endif /* HEAD_H */

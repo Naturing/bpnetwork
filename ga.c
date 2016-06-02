@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
-#include "mycode.h"
+#include "head.h"
 
 
 #define POPSIZE 50                                            /* 种群大小 */
