@@ -3,6 +3,7 @@
 #include <math.h>
 #include <float.h>
 #include "head.h"
+#include <unistd.h>
 
 
 #define POPSIZE 50                                            /* 种群大小 */
@@ -13,7 +14,7 @@
 #define UPPER_BOUND 2.5                                       /* 基因值的上界 */
 #define LOWER_BOUND -3.5                                      /* 基因值的下界 */
 #define MAX_DOUBLE 1000.0                                     /* 确定一个double上界 */
-#define MAX_FITNESS 998.8                                     /* 最大适应度，当最大的适应度达到这个值，停止迭代 */
+#define MAX_FITNESS 998.696786                                     /* 最大适应度，当最大的适应度达到这个值，停止迭代 */
 
 static int generation;                  /* 目前是第几代 */
 
@@ -110,7 +111,7 @@ static void keep_the_best(void)
 	/* 拷贝最优个体的基因 */
 	for (i = 0; i < NVARS; i++)
 		population[POPSIZE].gene[i] = population[cur_best].gene[i];
-	printf("GA: %d\t%lf\n",generation, MAX_DOUBLE - population[POPSIZE].fitness);
+	printf("GA: %d %lf\n",generation, MAX_DOUBLE - population[POPSIZE].fitness);
 }
 
 /* 前一个种群中最优个体存放在数组最后一位，如果目前种群的最优个体
@@ -267,6 +268,7 @@ static void mutate(void)
 }
 
 static void sa(void);
+static double target(struct genotype *var);
 
 /* 遗传算法的对外函数 */
 
@@ -276,7 +278,7 @@ void ga_interface(void)
 	evaluate();                                   /* 对初代进行评估 */
 	keep_the_best();                              /* 寻找最优个体并保存 */
 	for (generation = 1; population[POPSIZE].fitness < MAX_FITNESS; generation++) {
-		printf("GA: %d\t", generation);
+		printf("GA: %d ", generation);
 		select_newpopulation();                   /* 选出新种群 */
 		crossover();                              /* 个体基因交叉 */
 		mutate();                                 /* 基因变异 */
@@ -290,7 +292,8 @@ void ga_interface(void)
 	/* 
 	 * 迭代结束后，将最优个体的基因拷贝到BP的权值中 
 	 */
-	copy_gene_to_bpweight(population[POPSIZE].gene, input_weight, output_weight);
+	//copy_gene_to_bpweight(population[POPSIZE].gene, input_weight, output_weight);
+	sleep(5);
 }
 
 /*
@@ -299,6 +302,7 @@ void ga_interface(void)
  * 这里GA遇到局部最优解的问题，使用SA（模拟退火算法）来帮助找到全局最优解
  */
 
+#define MAX_TRAIN 150           /* SA迭代的最大次数 */
 #define INIT_TEMPERATURE 0.01   /* 初始温度 */
 #define TOTAL_LIMIT 1000        /* 给定温度下最大迭代次数 */
 #define RECEIVE_LIMIT 50        /* 给定温度下接受最大迭代次数 */
@@ -322,12 +326,16 @@ static double target(struct genotype *var)
 	double sum, error = 0.0;
 
 	copy_gene_to_bpweight(var->gene, input_weight, output_weight);
-	for (i = 0; i < DATA; i++) {
+	i = 0;
 		comput_output(i);
-		 for (j = 0; j < OUT; j++)
+		//printf("i:%d  ", i);
+		 for (j = 0; j < OUT; j++) {
+			//printf("%lf ", output_data[j]);
 			error += fabs((output_data[j] - data_out[i][j]) / data_out[i][j]);
-	}
-	return error / DATA;
+		}
+	//printf("\n");
+	//printf("%lf\n", error);
+	return error;
 }
 
 /*
@@ -357,6 +365,9 @@ static void sa(void)
 	int i, j;
 	int k = 0;                                           /* 温度下降次数控制变量 */	
 	current = population[POPSIZE];                       /* 将GA得到的最优个体做为SA的起点 */
+	best = current;
+	//printf("first current %lf\n", target(&current));
+	//sleep(2);
 	do {
 		previous = current;                              /* 保留前一个变量值 */
 		rec_num = 0;
@@ -376,6 +387,8 @@ static void sa(void)
 			}
 			next_target = target(&next);
 			current_target = target(&current);
+			//printf("current_target %lf\tnext_target %lf\n", current_target, next_target);
+			//sleep(1);
 			/*
 			 * 若下一个状态优于目前状态，直接接受下一个状态
 			 * 若下一个状态差于目前状态，按一定概率接受下一个状态
@@ -390,10 +403,10 @@ static void sa(void)
 				rec_num++;
 			}
 		}
-		temp_i=i-1;
-		printf("SA: %d\t%lf\n", k, target(&best));
+		temp_i = i - 1;
+		printf("SA: %d %lf\n", k, target(&best));
 		k++;
 		temperature_k = init_temperature / (k + 1);           /* 温度下降原则 */
-	} while (k < 5000 /*|| fabs(best_x-0.25) < 0.001*/);
-	population[POPSIZE] = best;
+	} while (k < MAX_TRAIN);
+	copy_gene_to_bpweight(best.gene, input_weight, output_weight);
 }

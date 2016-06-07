@@ -4,6 +4,7 @@
 #include <time.h>
 #include <math.h>
 #include "head.h"
+#include <unistd.h>
 
 #define TRAINC 2000000000                                         /* 训练次数上限 */
 
@@ -13,7 +14,7 @@
 
 /* 误差 */
 
-#define ERROR 0.012
+#define ERROR 0.001
 
 /* 存放训练数据的文件 */
 
@@ -102,8 +103,8 @@ static void init_bpnetwork(void)
 			//printf("init: %lf\n", data_out[j][i]);
 		}
 	}
-
-	/*for (i = 0; i < NEURON; i++) {	
+	/*
+	for (i = 0; i < NEURON; i++) {	
 		for (j = 0; j < IN; j++) {	
 			input_weight[i][j] = rand() * 2.0 / RAND_MAX - 1;
 			input_delta[i][j] = 0;
@@ -115,7 +116,8 @@ static void init_bpnetwork(void)
 			output_weight[i][j] = rand() * 2.0 / RAND_MAX - 1;
 			output_delta[i][j] = 0;
 		}
-	}*/
+	}
+	*/
 }
 
 /* 计算输出 */
@@ -173,12 +175,17 @@ static void  train_network(void)
 		error = 0.0;
 		for (i = 0; i < DATA; i++) {
 			comput_output(i);
-			for (j = 0; j < OUT; j++)
+			//printf("i:%d  ", i);
+			for (j = 0; j < OUT; j++) {
+				//printf("%lf ", output_data[j]);
 				error += fabs((output_data[j] - data_out[i][j]) / data_out[i][j]);
+			}
 			back_update(i);
 		}
+		//printf("\n");
 		time++;
-		printf("%d  %lf\n",time, error / DATA);
+		printf("BP: %d %lf\n",time, error / DATA);
+		//sleep(2);
 	} while (time < TRAINC && error / DATA > ERROR);
 	//printf("train finish\n");
 }
