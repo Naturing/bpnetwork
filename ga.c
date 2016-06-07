@@ -110,7 +110,7 @@ static void keep_the_best(void)
 	/* 拷贝最优个体的基因 */
 	for (i = 0; i < NVARS; i++)
 		population[POPSIZE].gene[i] = population[cur_best].gene[i];
-	printf("%d  %lf\n",generation, population[POPSIZE].fitness);
+	printf("GA: %d\t%lf\n",generation, MAX_DOUBLE - population[POPSIZE].fitness);
 }
 
 /* 前一个种群中最优个体存放在数组最后一位，如果目前种群的最优个体
@@ -158,7 +158,7 @@ static void elitist(void)
 			population[worst_mem].gene[i] = population[POPSIZE].gene[i];
 		population[worst_mem].fitness = population[POPSIZE].fitness;
 	} 
-	printf("%lf\n", population[POPSIZE].fitness);
+	printf("%lf\n", MAX_DOUBLE - population[POPSIZE].fitness);
 }
 
 /* 选出新的种群 */
@@ -266,6 +266,8 @@ static void mutate(void)
 		}
 }
 
+static void sa(void);
+
 /* 遗传算法的对外函数 */
 
 void ga_interface(void) 
@@ -274,29 +276,124 @@ void ga_interface(void)
 	evaluate();                                   /* 对初代进行评估 */
 	keep_the_best();                              /* 寻找最优个体并保存 */
 	for (generation = 1; population[POPSIZE].fitness < MAX_FITNESS; generation++) {
-		printf("%d  ", generation);
+		printf("GA: %d\t", generation);
 		select_newpopulation();                   /* 选出新种群 */
 		crossover();                              /* 个体基因交叉 */
 		mutate();                                 /* 基因变异 */
 		evaluate();                               /* 对新的种群进行评估 */
 		elitist();                                /* 确保最优个体得以保存 */
 	}
-	/* 迭代结束后，将最优个体的基因拷贝到BP的权值中 */
+	/*
+	 * 调用SA来优化GA
+	 */
+	sa();
+	/* 
+	 * 迭代结束后，将最优个体的基因拷贝到BP的权值中 
+	 */
 	copy_gene_to_bpweight(population[POPSIZE].gene, input_weight, output_weight);
 }
 
-/*void read_data(void);
-void init_bpnetwork(void);
-void print_weight();
-int main() {
-	read_data();
-	init_bpnetwork();
-	ga_interface();
-	int i;
-	for (i = 0; i < NVARS; i++) {
-		printf("%lf  ", population[POPSIZE].gene[i]);
+/*
+ * 模拟退火算法部分
+ * 这里用模拟退火算法来优化GA（遗传算法）
+ * 这里GA遇到局部最优解的问题，使用SA（模拟退火算法）来帮助找到全局最优解
+ */
+
+#define INIT_TEMPERATURE 0.01   /* 初始温度 */
+#define TOTAL_LIMIT 1000        /* 给定温度下最大迭代次数 */
+#define RECEIVE_LIMIT 50        /* 给定温度下接受最大迭代次数 */
+#define STEP_SIZE 0.001         /* 步长 */
+
+/* 
+ * 产生[0,1]之间的随机数 
+ */
+static double randnum()
+{
+	return (double) rand() / RAND_MAX;
+}
+
+/*
+ * 目标函数表达式 
+ * 与GA的适应度计算类似
+ */
+static double target(struct genotype *var)
+{
+	int mem, i, j;
+	double sum, error = 0.0;
+
+	copy_gene_to_bpweight(var->gene, input_weight, output_weight);
+	for (i = 0; i < DATA; i++) {
+		comput_output(i);
+		 for (j = 0; j < OUT; j++)
+			error += fabs((output_data[j] - data_out[i][j]) / data_out[i][j]);
 	}
-	printf("\n");
-	print_weight();
-	return 0;
-}*/
+	return error / DATA;
+}
+
+/*
+ * 模拟退火算法
+ */
+static void sa(void)
+{
+	double init_temperature = INIT_TEMPERATURE;          /* 初始温度 */
+	double temperature_k = init_temperature;             /* 定义第k次温度 */
+	double total_limit = TOTAL_LIMIT;                    /* 温度为k时的最大循环次数 */
+	double step_size = STEP_SIZE;                        /* 步长 */
+	double receive_limit = RECEIVE_LIMIT;                /* 内循环中接受的最大次数 */
+	struct genotype current;                             /* 定义一个当前状态 */
+	struct genotype previous;                            /* 保存前一个状态 */
+	struct genotype next;                                /* 保存下一个状态 */
+	struct genotype best;                                /* 保存最优值 */
+	double current_target;                               /* 计算目前状态的目标值 */
+	double next_target;                                  /* 计算下一个状态的目标值 */
+
+	/*
+	 * 以下三个参数用于估算接受概率
+	 * */
+	int rec_num = 0;                                     /* 接受次数计数器 */
+	double temp_i = 0;                                   /* 记录内循环的循环次数 */
+	int temp_num = 0;                                    /* 记录下一个状态优于目前状态的数目 */
+
+	int i, j;
+	int k = 0;                                           /* 温度下降次数控制变量 */	
+	current = population[POPSIZE];                       /* 将GA得到的最优个体做为SA的起点 */
+	do {
+		previous = current;                              /* 保留前一个变量值 */
+		rec_num = 0;
+		temp_i = 0;
+		temp_num = 0;
+
+		for (i = 1;i < total_limit && rec_num < receive_limit; i++) {
+			/*
+			 * 产生下一个状态
+			 * 利用GA的变异相同的原理来产生下一个状态
+			 */
+			next = current;
+			for (j = 0; j < NVARS; j++) {
+            	if (rand() % 1000 / 1000.0 < PMUTATION) {
+					next.gene[j] = randval(next.lower[j], next.upper[j]);
+				}
+			}
+			next_target = target(&next);
+			current_target = target(&current);
+			/*
+			 * 若下一个状态优于目前状态，直接接受下一个状态
+			 * 若下一个状态差于目前状态，按一定概率接受下一个状态
+			 */
+			if (next_target < current_target) { 
+				best = next;
+				current = next;
+				rec_num++;
+				temp_num++;
+			} else if (exp((current_target - next_target) / temperature_k) > randnum()) {
+				current = next;
+				rec_num++;
+			}
+		}
+		temp_i=i-1;
+		printf("SA: %d\t%lf\n", k, target(&best));
+		k++;
+		temperature_k = init_temperature / (k + 1);           /* 温度下降原则 */
+	} while (k < 5000 /*|| fabs(best_x-0.25) < 0.001*/);
+	population[POPSIZE] = best;
+}
