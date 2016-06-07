@@ -20,7 +20,6 @@ static int generation;                  /* 目前是第几代 */
 /* 种群成员结构 */
 
 struct genotype { 
-
   double gene[NVARS];        /* 基因型 */
   double fitness;            /* 适应度 */
   double upper[NVARS];       /* 基因型数据上界 */
@@ -34,15 +33,15 @@ static struct genotype newpopulation[POPSIZE + 1]; /* 新的种群，用来替�
 
 /* 产生以low和high为边界的随机数 */
 
-static double randval(double low, double high) {
-
+static double randval(double low, double high) 
+{
 	return ((double)(rand() % 1000) / 1000.0) * (high - low) + low;
 }
 
 /* 对种群数据结构进行初始化 */
 
-static void init_population(void) {
-
+static void init_population(void) 
+{
 int i, j;
 
 for (i = 0; i < NVARS; i++) {
@@ -60,8 +59,8 @@ for (i = 0; i < NVARS; i++) {
 
 /* 复制基因型数据到BP网络的权值中 */
 
-static void copy_gene_to_bpweight(double *gene, double input_weight[NEURON][IN], double output_weight[OUT][NEURON]) {
-	
+static void copy_gene_to_bpweight(double *gene, double input_weight[NEURON][IN], double output_weight[OUT][NEURON]) 
+{	
 	int i = 0, j, k;
 	for (j = 0; j < NEURON; j++)
 		for (k = 0; k < IN; k++)
@@ -73,8 +72,8 @@ static void copy_gene_to_bpweight(double *gene, double input_weight[NEURON][IN],
 
 /* 评估函数 */
 
-static void evaluate(void) {
-
+static void evaluate(void) 
+{
 	int mem, i, j;
 	double sum, error;
 
@@ -94,7 +93,8 @@ static void evaluate(void) {
 
 /* 寻找最优个体，并放到population[POPSIZE]中 */
 
-static void keep_the_best(void) {
+static void keep_the_best(void) 
+{
 	int mem;
 	int i;
 	int cur_best = 0; /* 最优个体的索引 */
@@ -116,7 +116,8 @@ static void keep_the_best(void) {
 /* 前一个种群中最优个体存放在数组最后一位，如果目前种群的最优个体
  * 比前一个种群差，用前一个种群中最优个体替换目前种群的最差个体 */
 
-static void elitist(void) {
+static void elitist(void) 
+{
 	int i;
 	double best, worst;             /* 最好以及最差适应度值 */
 	int best_mem, worst_mem;        /* 最好以及最差个体索引 */
@@ -162,7 +163,8 @@ static void elitist(void) {
 
 /* 选出新的种群 */
 
-static void select_newpopulation(void) {
+static void select_newpopulation(void) 
+{
 	int mem, i, j, k;
 	double sum = 0, p;
 
@@ -199,8 +201,8 @@ static void select_newpopulation(void) {
 		population[i] = newpopulation[i];
 }
 
-static void swap(double *x, double *y) {
-
+static void swap(double *x, double *y) 
+{
 	double temp;
 	temp = *x;
 	*x = *y;
@@ -209,8 +211,8 @@ static void swap(double *x, double *y) {
 
 /* 交叉两个个体的基因 */
 
-static void xover(int one, int two) {
-
+static void xover(int one, int two) 
+{
 	int i;
 	int point; /* 交叉点 */
 
@@ -227,8 +229,8 @@ static void xover(int one, int two) {
 
 /* 选出两个个体进行单点交叉 */
 
-static void crossover(void) {
-
+static void crossover(void) 
+{
 	int i, mem, one;
 	int first  =  0;
 	double x;
@@ -247,8 +249,8 @@ static void crossover(void) {
 
 /* 遍历个体所有基因，按照变异概率进行变异 */
 
-static void mutate(void) {
-
+static void mutate(void) 
+{
 	int i, j;
 	double lbound, hbound;
 	double x;
@@ -266,7 +268,8 @@ static void mutate(void) {
 
 /* 遗传算法的对外函数 */
 
-void ga_interface(void) {
+void ga_interface(void) 
+{
 	init_population();                            /* 初始化种群数据结构 */
 	evaluate();                                   /* 对初代进行评估 */
 	keep_the_best();                              /* 寻找最优个体并保存 */

@@ -41,8 +41,8 @@ static double max_in[IN], min_in[IN], max_out[OUT], min_out[OUT];  /* 训练数�
 
 /* 读训练数据 */
 
-static void read_data(void) {
-
+static void read_data(void) 
+{
 	FILE *fp_tmp;
 	int i, j;
 	if ((fp_tmp = fopen(TRAIN_FILE_INPUT,"r")) == NULL) {
@@ -68,8 +68,8 @@ static void read_data(void) {
 
 /* 初始化BP神经网络 */
 
-static void init_bpnetwork(void) {
-
+static void init_bpnetwork(void) 
+{
 	int i, j;
 
 	for (i = 0; i < IN; i++) {
@@ -120,8 +120,8 @@ static void init_bpnetwork(void) {
 
 /* 计算输出 */
 
-void comput_output(int var) {
-
+void comput_output(int var) 
+{
 	int i,j;
 	double sum;
 	for (i = 0; i < NEURON; i++) {
@@ -143,8 +143,8 @@ void comput_output(int var) {
 
 /* 反馈学习 */
 
-static void back_update(int var) {
-
+static void back_update(int var) 
+{
 	int i, j;
 	double tmp;
 	for (i = 0; i < NEURON; i++) {
@@ -165,8 +165,8 @@ static void back_update(int var) {
 
 /* 训练神经网络 */
 
-static void  train_network(void) {
-
+static void  train_network(void) 
+{
 	int i, j, time = 0;
 	double error;  /* 误差 */
 	do {
@@ -185,8 +185,8 @@ static void  train_network(void) {
 
 /* 将训练后的权值写入到文件中 */
 
-static void write_neuron(void) {
-
+static void write_neuron(void) 
+{
 	int i, j;
 	FILE *fp;
 	if ((fp = fopen(NEURON_WEIGHT, "w")) == NULL) {
@@ -234,8 +234,8 @@ static void write_neuron(void) {
 
 /* 从文件中读取训练好的权值 */
  
-static void read_neuron(void) {
-
+static void read_neuron(void) 
+{
 	int i, j;
 	FILE *fp;
 	if ((fp = fopen(NEURON_WEIGHT, "r")) == NULL) {
@@ -272,8 +272,8 @@ static void read_neuron(void) {
 }
 
 /* 输出权值，用于调试 */
-static void print_weight(void) {
-
+static void print_weight(void) 
+{
 	int i, j;
 	for (i = 0; i < NEURON; i++) {	
 		for (j = 0; j < IN; j++) {
@@ -292,8 +292,8 @@ static void print_weight(void) {
 }
 
 /* 测试训练后的网络 */
-static void test_network(double *test_in) {
-
+static void test_network(double *test_in) 
+{
 	int i, j;
 	double sum;
 	
@@ -320,8 +320,8 @@ static void test_network(double *test_in) {
 	}
 }
 
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[]) 
+{
 	char cmd[CMD_SIZE];	
 	double test_in[IN];
 	int i;
