@@ -5,7 +5,6 @@
 #include "head.h"
 #include <unistd.h>
 
-
 #define POPSIZE 50                                            /* 种群大小 */
 #define MAXGENS 18000                                         /* 世代数 */
 #define NVARS ((NEURON * IN + OUT * NEURON))                  /* 基因型个数*/
@@ -14,12 +13,13 @@
 #define UPPER_BOUND 2.5                                       /* 基因值的上界 */
 #define LOWER_BOUND -3.5                                      /* 基因值的下界 */
 #define MAX_DOUBLE 1000.0                                     /* 确定一个double上界 */
-#define MAX_FITNESS 998.696786                                     /* 最大适应度，当最大的适应度达到这个值，停止迭代 */
+#define MAX_FITNESS 998.696786                                /* 最大适应度，当最大的适应度达到这个值，停止迭代 */
 
-static int generation;                  /* 目前是第几代 */
+static int generation;                                        /* 目前是第几代 */
 
-/* 种群成员结构 */
-
+/* 
+ * 种群成员结构 
+ */
 struct genotype { 
   double gene[NVARS];        /* 基因型 */
   double fitness;            /* 适应度 */
@@ -32,15 +32,17 @@ struct genotype {
 static struct genotype population[POPSIZE + 1];    /* 整个种群，population[POPSIZE]中存储最优个体的数据 */
 static struct genotype newpopulation[POPSIZE + 1]; /* 新的种群，用来替代旧种群 */
 
-/* 产生以low和high为边界的随机数 */
-
+/* 
+ * 产生以low和high为边界的随机数 
+ */
 static double randval(double low, double high) 
 {
 	return ((double)(rand() % 1000) / 1000.0) * (high - low) + low;
 }
 
-/* 对种群数据结构进行初始化 */
-
+/* 
+ * 对种群数据结构进行初始化 
+ */
 static void init_population(void) 
 {
 int i, j;
@@ -58,8 +60,9 @@ for (i = 0; i < NVARS; i++) {
 	}
 }
 
-/* 复制基因型数据到BP网络的权值中 */
-
+/* 
+ * 复制基因型数据到BP网络的权值中 
+ */
 static void copy_gene_to_bpweight(double *gene, double input_weight[NEURON][IN], double output_weight[OUT][NEURON]) 
 {	
 	int i = 0, j, k;
@@ -71,8 +74,9 @@ static void copy_gene_to_bpweight(double *gene, double input_weight[NEURON][IN],
 			output_weight[j][k] = gene[i++];
 }
 
-/* 评估函数 */
-
+/* 
+ * 评估函数
+ */
 static void evaluate(void) 
 {
 	int mem, i, j;
@@ -86,14 +90,17 @@ static void evaluate(void)
 		 	for (j = 0; j < OUT; j++)
 				error += fabs((output_data[j] - data_out[i][j]) / data_out[i][j]);
 		}
-		/* error越小适应度越高，这里对error做个差值，使得fitness越高适应度越高 */
+		/* 
+		 * error越小适应度越高，这里对error做个差值，使得fitness越高适应度越高 
+		 */
 		population[mem].fitness = MAX_DOUBLE - error / DATA;
 		//printf("mem: %d\tfitness: %lf\n", mem, population[mem].fitness);
 	}
 }
 
-/* 寻找最优个体，并放到population[POPSIZE]中 */
-
+/* 
+ * 寻找最优个体，并放到population[POPSIZE]中 
+ */
 static void keep_the_best(void) 
 {
 	int mem;
@@ -108,15 +115,18 @@ static void keep_the_best(void)
 		}
 	}
 
-	/* 拷贝最优个体的基因 */
+	/* 
+	 * 拷贝最优个体的基因 
+	 */
 	for (i = 0; i < NVARS; i++)
 		population[POPSIZE].gene[i] = population[cur_best].gene[i];
 	printf("GA: %d %lf\n",generation, MAX_DOUBLE - population[POPSIZE].fitness);
 }
 
-/* 前一个种群中最优个体存放在数组最后一位，如果目前种群的最优个体
- * 比前一个种群差，用前一个种群中最优个体替换目前种群的最差个体 */
-
+/*
+ * 前一个种群中最优个体存放在数组最后一位，如果目前种群的最优个体
+ * 比前一个种群差，用前一个种群中最优个体替换目前种群的最差个体 
+ */
 static void elitist(void) 
 {
 	int i;
@@ -147,9 +157,10 @@ static void elitist(void)
 		}
 	}
 
-	/* 如果目前种群的最优个体比前一个种群的最优个体好，则把这个最优个体拷贝到
-	 * population[POPSIZE]中，否则，用前一个种群的最优个体替换目前种群中最差的个体 */
-
+	/* 
+	 * 如果目前种群的最优个体比前一个种群的最优个体好，则把这个最优个体拷贝到
+	 * population[POPSIZE]中，否则，用前一个种群的最优个体替换目前种群中最差的个体 
+	 */
 	if (best >= population[POPSIZE].fitness) {
 		for (i = 0; i < NVARS; i++)
 			population[POPSIZE].gene[i] = population[best_mem].gene[i];
@@ -162,30 +173,39 @@ static void elitist(void)
 	printf("%lf\n", MAX_DOUBLE - population[POPSIZE].fitness);
 }
 
-/* 选出新的种群 */
-
+/* 
+ * 选出新的种群 
+ */
 static void select_newpopulation(void) 
 {
 	int mem, i, j, k;
 	double sum = 0, p;
 
-	/* 计算种群的适应度和 */
+	/* 
+	 * 计算种群的适应度和 
+	 */
 	for (mem = 0; mem < POPSIZE; mem++) {
 		sum += population[mem].fitness;
 	}
 
-	/* 计算各个个体的相对适应度 */
+	/* 
+	 * 计算各个个体的相对适应度 
+	 */
 	for (mem = 0; mem < POPSIZE; mem++) {
 		population[mem].rfitness =  population[mem].fitness / sum;
 	}
 
-	/* 计算个体的累积适应度，用于赌轮 */
+	/* 
+	 * 计算个体的累积适应度，用于赌轮 
+	 */
 	population[0].cfitness = population[0].rfitness;
 	for (mem = 1; mem < POPSIZE; mem++) {
 		population[mem].cfitness =  population[mem-1].cfitness + population[mem].rfitness;
 	}
 
-	/* 使用累积适应度选出下一代个体 */
+	/* 
+	 * 使用累积适应度选出下一代个体 
+	 */
 	for (i = 0; i < POPSIZE; i++) { 
 		p = rand() % 1000 / 1000.0;
 		if (p < population[0].cfitness)
@@ -197,7 +217,9 @@ static void select_newpopulation(void)
 		}
 	}
 
-	/* 选出新种群之后，拷贝 */
+	/* 
+	 * 选出新种群之后，拷贝 
+	 */
 	for (i = 0; i < POPSIZE; i++)
 		population[i] = newpopulation[i];
 }
@@ -210,14 +232,17 @@ static void swap(double *x, double *y)
 	*y = temp;
 }
 
-/* 交叉两个个体的基因 */
-
+/* 
+ * 交叉两个个体的基因 
+ */
 static void xover(int one, int two) 
 {
 	int i;
 	int point; /* 交叉点 */
 
-	/* 选择交叉点 */
+	/* 
+	 * 选择交叉点 
+	 */
 	if (NVARS > 1) {
 		if (NVARS == 2)
 			point = 1;
@@ -228,8 +253,9 @@ static void xover(int one, int two)
 	}
 }
 
-/* 选出两个个体进行单点交叉 */
-
+/* 
+ * 选出两个个体进行单点交叉 
+ */
 static void crossover(void) 
 {
 	int i, mem, one;
@@ -248,8 +274,9 @@ static void crossover(void)
 	}
 }
 
-/* 遍历个体所有基因，按照变异概率进行变异 */
-
+/*
+ * 遍历个体所有基因，按照变异概率进行变异 
+ */
 static void mutate(void) 
 {
 	int i, j;
@@ -268,10 +295,10 @@ static void mutate(void)
 }
 
 static void sa(void);
-static double target(struct genotype *var);
 
-/* 遗传算法的对外函数 */
-
+/* 
+ * 遗传算法的对外函数 
+ */
 void ga_interface(void) 
 {
 	init_population();                            /* 初始化种群数据结构 */
@@ -285,6 +312,7 @@ void ga_interface(void)
 		evaluate();                               /* 对新的种群进行评估 */
 		elitist();                                /* 确保最优个体得以保存 */
 	}
+	sleep(3);
 	/*
 	 * 调用SA来优化GA
 	 */
@@ -293,7 +321,7 @@ void ga_interface(void)
 	 * 迭代结束后，将最优个体的基因拷贝到BP的权值中 
 	 */
 	//copy_gene_to_bpweight(population[POPSIZE].gene, input_weight, output_weight);
-	sleep(5);
+	sleep(3);
 }
 
 /*
@@ -301,8 +329,7 @@ void ga_interface(void)
  * 这里用模拟退火算法来优化GA（遗传算法）
  * 这里GA遇到局部最优解的问题，使用SA（模拟退火算法）来帮助找到全局最优解
  */
-
-#define MAX_TRAIN 150           /* SA迭代的最大次数 */
+#define MAX_TRAIN 75            /* SA迭代的最大次数 */
 #define INIT_TEMPERATURE 0.01   /* 初始温度 */
 #define TOTAL_LIMIT 1000        /* 给定温度下最大迭代次数 */
 #define RECEIVE_LIMIT 50        /* 给定温度下接受最大迭代次数 */
@@ -326,16 +353,17 @@ static double target(struct genotype *var)
 	double sum, error = 0.0;
 
 	copy_gene_to_bpweight(var->gene, input_weight, output_weight);
-	i = 0;
+	for (i = 0; i < DATA; i++) {
 		comput_output(i);
 		//printf("i:%d  ", i);
 		 for (j = 0; j < OUT; j++) {
 			//printf("%lf ", output_data[j]);
 			error += fabs((output_data[j] - data_out[i][j]) / data_out[i][j]);
 		}
+	}
 	//printf("\n");
 	//printf("%lf\n", error);
-	return error;
+	return error / DATA;
 }
 
 /*
@@ -357,7 +385,7 @@ static void sa(void)
 
 	/*
 	 * 以下三个参数用于估算接受概率
-	 * */
+	 */
 	int rec_num = 0;                                     /* 接受次数计数器 */
 	double temp_i = 0;                                   /* 记录内循环的循环次数 */
 	int temp_num = 0;                                    /* 记录下一个状态优于目前状态的数目 */
@@ -382,7 +410,7 @@ static void sa(void)
 			next = current;
 			for (j = 0; j < NVARS; j++) {
             	if (rand() % 1000 / 1000.0 < PMUTATION) {
-					next.gene[j] = randval(next.lower[j], next.upper[j]);
+					next.gene[j] += randval(-0.01, 0.01);
 				}
 			}
 			next_target = target(&next);

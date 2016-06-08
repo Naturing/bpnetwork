@@ -6,29 +6,16 @@
 #include "head.h"
 #include <unistd.h>
 
-#define TRAINC 2000000000                                         /* 训练次数上限 */
-
-/* 学习率 */
-
-#define LEARN  0.2
-
-/* 误差 */
-
-#define ERROR 0.001
-
-/* 存放训练数据的文件 */
-
+#define TRAINC 2000000000                                          /* 训练次数上限 */
+#define LEARN  0.2                                                 /* 学习率 */
+#define ERROR 0.001                                                /* 误差 */
+/*
+ * 存放训练数据的文件 
+ */
 #define TRAIN_FILE_INPUT "./train_in.txt"
 #define TRAIN_FILE_OUTPUT "./train_out.txt"
-
-/* 存放训练后的权值 */
-
-#define NEURON_WEIGHT "./neuron.txt"
-
-/* 输入命令的最大长度 */
-
-#define CMD_SIZE 10
-
+#define NEURON_WEIGHT "./neuron.txt"                               /* 存放训练后的权值 */
+#define CMD_SIZE 10                                                /* 输入命令的最大长度 */
 
 static double data_in[DATA][IN];                                   /* 存储DATA个样本，每个样本IN个输入 */
 double data_out[DATA][OUT];                                        /* 存储DATA个样本，每个样本OUT个输出 */
@@ -40,8 +27,9 @@ static double activate[NEURON];                                    /* 神经元�
 double output_data[OUT];                                           /* BP神经网络的输出 */
 static double max_in[IN], min_in[IN], max_out[OUT], min_out[OUT];  /* 训练数据的最值，用于归一化 */
 
-/* 读训练数据 */
-
+/* 
+ * 读训练数据 
+ */
 static void read_data(void) 
 {
 	FILE *fp_tmp;
@@ -67,8 +55,9 @@ static void read_data(void)
 	fclose(fp_tmp);
 }
 
-/* 初始化BP神经网络 */
-
+/* 
+ * 初始化BP神经网络 
+ */
 static void init_bpnetwork(void) 
 {
 	int i, j;
@@ -120,8 +109,9 @@ static void init_bpnetwork(void)
 	*/
 }
 
-/* 计算输出 */
-
+/*
+ * 计算输出 
+ */
 void comput_output(int var) 
 {
 	int i,j;
@@ -143,8 +133,9 @@ void comput_output(int var)
 	}
 }
 
-/* 反馈学习 */
-
+/* 
+ * 反馈学习 
+ */
 static void back_update(int var) 
 {
 	int i, j;
@@ -165,8 +156,9 @@ static void back_update(int var)
 	}
 }
 
-/* 训练神经网络 */
-
+/* 
+ * 训练神经网络 
+ */
 static void  train_network(void) 
 {
 	int i, j, time = 0;
@@ -175,23 +167,19 @@ static void  train_network(void)
 		error = 0.0;
 		for (i = 0; i < DATA; i++) {
 			comput_output(i);
-			//printf("i:%d  ", i);
 			for (j = 0; j < OUT; j++) {
-				//printf("%lf ", output_data[j]);
 				error += fabs((output_data[j] - data_out[i][j]) / data_out[i][j]);
 			}
 			back_update(i);
 		}
-		//printf("\n");
 		time++;
 		printf("BP: %d %lf\n",time, error / DATA);
-		//sleep(2);
 	} while (time < TRAINC && error / DATA > ERROR);
-	//printf("train finish\n");
 }
 
-/* 将训练后的权值写入到文件中 */
-
+/* 
+ * 将训练后的权值写入到文件中 
+ */
 static void write_neuron(void) 
 {
 	int i, j;
@@ -239,8 +227,9 @@ static void write_neuron(void)
 	fclose(fp);
 }
 
-/* 从文件中读取训练好的权值 */
- 
+/* 
+ * 从文件中读取训练好的权值 
+ */
 static void read_neuron(void) 
 {
 	int i, j;
@@ -278,7 +267,9 @@ static void read_neuron(void)
 	fclose(fp);
 }
 
-/* 输出权值，用于调试 */
+/* 
+ * 输出权值，用于调试 
+ */
 static void print_weight(void) 
 {
 	int i, j;
@@ -298,7 +289,9 @@ static void print_weight(void)
 	}
 }
 
-/* 测试训练后的网络 */
+/* 
+ * 测试训练后的网络 
+ */
 static void test_network(double *test_in) 
 {
 	int i, j;
@@ -329,13 +322,13 @@ static void test_network(double *test_in)
 
 int main(int argc, char *argv[]) 
 {
-	char cmd[CMD_SIZE];	
+	char cmd[CMD_SIZE] = "train";	
 	double test_in[IN];
 	int i;
 
 	printf("********** Bpnetwork Console **********\n");
 	while (TRUE) {
-		scanf("%s", cmd);
+		//scanf("%s", cmd);
 		if (!strcmp(cmd, "help")) {
 			printf("read  read neuron\n");
 			printf("train  train network\n");
@@ -349,6 +342,7 @@ int main(int argc, char *argv[])
 			ga_interface();
 			train_network();
 			write_neuron();
+			break;
 		} else if (!strcmp(cmd, "test")) {
 			printf("input test data\n");
 			for (i = 0; i < IN; i++) {
