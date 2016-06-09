@@ -4,7 +4,6 @@
 #include <time.h>
 #include <float.h>
 #include "head.h"
-#include <unistd.h>
 
 #define POPSIZE 50                                            /* 种群大小 */
 #define MAXGENS 18000                                         /* 世代数 */

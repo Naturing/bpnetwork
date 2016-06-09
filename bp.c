@@ -4,7 +4,6 @@
 #include <time.h>
 #include <math.h>
 #include "head.h"
-#include <unistd.h>
 
 #define TRAINC 10000                                               /* 训练次数上限 */
 #define LEARN  0.2                                                 /* 学习率 */
@@ -591,6 +590,8 @@ int main(int argc, char *argv[])
 				printf("=");
 			}
 			printf("\n");
+		} else if (!strcmp(cmd, "draw")) {
+			system("./draw.sh");
 		} else if (!strcmp(cmd, "exit")) {
 			break;
 		}
