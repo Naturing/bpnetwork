@@ -6,7 +6,7 @@
 #include "head.h"
 #include <unistd.h>
 
-#define TRAINC 2000000000                                          /* 训练次数上限 */
+#define TRAINC 10000                                               /* 训练次数上限 */
 #define LEARN  0.2                                                 /* 学习率 */
 #define ERROR 0.001                                                /* 误差 */
 /*
@@ -14,6 +14,8 @@
  */
 #define TRAIN_FILE_INPUT "./train_in.txt"
 #define TRAIN_FILE_OUTPUT "./train_out.txt"
+
+#define TEST_FILE "./test.txt"                                     /* 存放训练数据的文件 */
 #define NEURON_WEIGHT "./neuron.txt"                               /* 存放训练后的权值 */
 #define CMD_SIZE 10                                                /* 输入命令的最大长度 */
 
@@ -26,6 +28,10 @@ static double output_delta[OUT][NEURON];                           /* 输出权�
 static double activate[NEURON];                                    /* 神经元激活函数对外的输出 */
 double output_data[OUT];                                           /* BP神经网络的输出 */
 static double max_in[IN], min_in[IN], max_out[OUT], min_out[OUT];  /* 训练数据的最值，用于归一化 */
+static double test_data[ALL_DATA - DATA][IN + OUT];                /* 存放测试数据 */
+static double bp_out[ALL_DATA - DATA];                             /* 单bp的训练输出 */
+static double bp_ga_out[ALL_DATA - DATA];                          /* bp-ga的训练输出 */
+static double bp_ga_sa_out[ALL_DATA - DATA];                       /* bp-ga-sa的训练输出 */
 
 /* 
  * 读训练数据 
@@ -34,7 +40,7 @@ static void read_data(void)
 {
 	FILE *fp_tmp;
 	int i, j;
-	if ((fp_tmp = fopen(TRAIN_FILE_INPUT,"r")) == NULL) {
+	if ((fp_tmp = fopen(TRAIN_FILE_INPUT, "r")) == NULL) {
 		fprintf(stderr, "can not open the in file\n");
 		exit(EXIT_FAILURE);
 	}
@@ -51,6 +57,24 @@ static void read_data(void)
 	for (i = 0; i < DATA; i++) {
 		for (j = 0; j < OUT; j++)
 			fscanf(fp_tmp, "%lf", &data_out[i][j]);
+	}
+	fclose(fp_tmp);
+}
+
+/*
+ *读测试数据
+ */
+static void read_test(void)
+{
+	FILE *fp_tmp;
+	int i, j;
+	if ((fp_tmp = fopen(TEST_FILE, "r")) == NULL) {
+		fprintf(stderr, "can not open the test file\n");
+		exit(EXIT_FAILURE);
+	}
+	for (i = 0; i < ALL_DATA - DATA; i++) {
+		for (j = 0; j < IN + OUT; j++)
+			fscanf(fp_tmp, "%lf", &test_data[i][j]);
 	}
 	fclose(fp_tmp);
 }
@@ -92,7 +116,7 @@ static void init_bpnetwork(void)
 			//printf("init: %lf\n", data_out[j][i]);
 		}
 	}
-	/*
+
 	for (i = 0; i < NEURON; i++) {	
 		for (j = 0; j < IN; j++) {	
 			input_weight[i][j] = rand() * 2.0 / RAND_MAX - 1;
@@ -106,7 +130,6 @@ static void init_bpnetwork(void)
 			output_delta[i][j] = 0;
 		}
 	}
-	*/
 }
 
 /*
@@ -174,7 +197,7 @@ static void  train_network(void)
 		}
 		time++;
 		printf("BP: %d %lf\n",time, error / DATA);
-	} while (time < TRAINC && error / DATA > ERROR);
+	} while (time < TRAINC /* && error / DATA > ERROR */);
 }
 
 /* 
@@ -292,7 +315,7 @@ static void print_weight(void)
 /* 
  * 测试训练后的网络 
  */
-static void test_network(double *test_in) 
+static double test_network(double *test_in) 
 {
 	int i, j;
 	double sum;
@@ -316,39 +339,256 @@ static void test_network(double *test_in)
 			sum += output_weight[i][j] * activate[j];
 		}
 		//printf("%lf\t%lf\t%lf\t%lf\n", sum, data_out[i], max_out[i], min_out[i]);
-		printf("%lf\n", sum * (max_out[i] - min_out[i] + 1) + min_out[i] - 1);
+		//printf("%lf\n", sum * (max_out[i] - min_out[i] + 1) + min_out[i] - 1);
+		return sum * (max_out[i] - min_out[i] + 1) + min_out[i] - 1;
 	}
 }
 
 int main(int argc, char *argv[]) 
 {
-	char cmd[CMD_SIZE] = "train";	
+	char cmd[CMD_SIZE];	
+	int i, j;
 	double test_in[IN];
-	int i;
+	FILE *fp_tmp;
+	/*
+	 * 测试程序运行时间
+	 */
+	struct timeval tpstart, tpend;
+	float timeuse;
 
 	printf("********** Bpnetwork Console **********\n");
 	while (TRUE) {
-		//scanf("%s", cmd);
+		scanf("%s", cmd);
 		if (!strcmp(cmd, "help")) {
-			printf("read  read neuron\n");
-			printf("train  train network\n");
-			printf("test  test network\n");
-			printf("exit  exit program\n");
-		} else if (!strcmp(cmd, "read")) {
-			read_neuron();
+			printf("train  训练神经网络\n");
+			printf("test  展示测试结果\n");
+			printf("draw  画出结果对比图");
+			printf("exit  退出程序\n");
 		} else if (!strcmp(cmd, "train")) {
 			read_data();
+			printf("read_test\n");
+			read_test();
+			printf("read_test_end\n");
 			init_bpnetwork();
-			ga_interface();
+
+			printf("BP迭代开始\n");
+			gettimeofday(&tpstart, NULL);
 			train_network();
-			write_neuron();
-			break;
-		} else if (!strcmp(cmd, "test")) {
-			printf("input test data\n");
-			for (i = 0; i < IN; i++) {
-				scanf("%lf", test_in + i);
+			for (i = 0; i < ALL_DATA - DATA; i++) {
+				for (j = 0; j < IN; j++) {
+					test_in[j] = test_data[i][j];
+				}
+				bp_out[i] = test_network(test_in);
 			}
-			test_network(test_in);
+			gettimeofday(&tpend, NULL);
+			timeuse = 1000000 * (tpend.tv_sec - tpstart.tv_sec) + tpend.tv_usec - tpstart.tv_usec;
+			timeuse /= 1000000;
+			printf("BP迭代结束，用时：%f秒\n", timeuse);
+
+			printf("BP-GA迭代开始\n");
+			gettimeofday(&tpstart, NULL);
+			ga_interface(0);
+			train_network();
+			for (i = 0; i < ALL_DATA - DATA; i++) {
+				for (j = 0; j < IN; j++) {
+					test_in[j] = test_data[i][j];
+				}
+				bp_ga_out[i] = test_network(test_in);
+			}
+			gettimeofday(&tpend, NULL);
+			timeuse = 1000000 * (tpend.tv_sec - tpstart.tv_sec) + tpend.tv_usec - tpstart.tv_usec;
+			timeuse /= 1000000;
+			printf("BP-GA迭代结束，用时：%f秒\n", timeuse);
+			sleep(3);
+
+			printf("BP-GA-SA迭代开始\n");
+			gettimeofday(&tpstart, NULL);
+			ga_interface(1);
+			train_network();
+			for (i = 0; i < ALL_DATA - DATA; i++) {
+				for (j = 0; j < IN; j++) {
+					test_in[j] = test_data[i][j];
+				}
+				bp_ga_sa_out[i] = test_network(test_in);
+			}
+			gettimeofday(&tpend, NULL);
+			timeuse = 1000000 * (tpend.tv_sec - tpstart.tv_sec) + tpend.tv_usec - tpstart.tv_usec;
+			timeuse /= 1000000;
+			printf("BP-GA-SA迭代结束，用时：%f秒\n", timeuse);
+
+			/*
+			 * 将训练数据,bp,bp-ga,bp-ga-sa的输出数据写入到文件中，方便用gnuplot画图
+			 */
+			if ((fp_tmp = fopen("./train", "w")) == NULL) {
+				fprintf(stderr, "can not open the train file\n");
+				exit(EXIT_FAILURE);
+			}
+			for (i = 0; i < ALL_DATA - DATA; i++) {
+				fprintf(fp_tmp, "%d %lf\n", i, test_data[i][IN + OUT -1]);
+			}
+			fclose(fp_tmp);
+
+			if ((fp_tmp = fopen("./bp", "w")) == NULL) {
+				fprintf(stderr, "can not open the bp.txt file\n");
+				exit(EXIT_FAILURE);
+			}
+			for (i = 0; i < ALL_DATA - DATA; i++) {
+				fprintf(fp_tmp, "%d %lf\n", i, bp_out[i]);
+			}
+			fclose(fp_tmp);
+
+			if ((fp_tmp = fopen("./bp-ga", "w")) == NULL) {
+				fprintf(stderr, "can not open the bp-ga.txt file\n");
+				exit(EXIT_FAILURE);
+			}
+			for (i = 0; i < ALL_DATA - DATA; i++) {
+				fprintf(fp_tmp, "%d %lf\n", i, bp_ga_out[i]);
+			}
+			fclose(fp_tmp);
+
+			if ((fp_tmp = fopen("./bp-ga-sa", "w")) == NULL) {
+				fprintf(stderr, "can not open the bp-ga-sa.txt file\n");
+				exit(EXIT_FAILURE);
+			}
+			for (i = 0; i < ALL_DATA - DATA; i++) {
+				fprintf(fp_tmp, "%d %lf\n", i, bp_ga_sa_out[i]);
+			}
+			fclose(fp_tmp);
+
+		} else if (!strcmp(cmd, "test")) {
+			/*
+			 * 打印表头
+			 */
+			for (i = 0; i < 60; i++) {
+				printf("=");
+			}
+			printf("\n");
+			for (i = 0; i < 5; i++) {
+				printf(" ");
+			}
+			printf("method");
+			for (i = 0; i< 14; i++) {
+				printf(" ");
+			}
+			printf("predicted");
+			for (i = 0; i < 11; i++) {
+				printf(" ");
+			}
+			printf("expected\n");
+			for (i = 0; i < 60; i++) {
+				printf("=");
+			}
+			printf("\n");
+			/*
+			 * 打印BP数据
+			 */
+			for (i = 0; i < ALL_DATA - DATA; i++) {
+				if (i == 2) {
+					for (j = 0; j < 5; j++) {
+						printf(" ");
+					}
+					printf("BP");
+					for (j = 0; j < 18; j++) {
+						printf(" ");
+					}
+				} else {
+					for (j = 0; j < 25; j++) {
+						printf(" ");
+					}
+				}
+				printf("%lf", bp_out[i]);
+				for (j = 0; j < 10; j++) {
+					printf(" ");
+				}
+				printf("%lf\n", test_data[i][IN + OUT -1]);
+				if (i != 4) {
+					for (j = 0; j < 25; j++) {
+						printf(" ");
+					}
+					for (j = 0; j < 35; j++) {
+						printf("-");
+					}
+					printf("\n");
+				}
+			}
+			for (i = 0; i < 60; i++) {
+				printf("=");
+			}
+			printf("\n");
+
+			/*
+			 * 打印BP-GA数据
+			 */
+			for (i = 0; i < ALL_DATA - DATA; i++) {
+				if (i == 2) {
+					for (j = 0; j < 5; j++) {
+						printf(" ");
+					}
+					printf("BP-GA");
+					for (j = 0; j < 15; j++) {
+						printf(" ");
+					}
+				} else {
+					for (j = 0; j < 25; j++) {
+						printf(" ");
+					}
+				}
+				printf("%lf", bp_ga_out[i]);
+				for (j = 0; j < 10; j++) {
+					printf(" ");
+				}
+				printf("%lf\n", test_data[i][IN + OUT -1]);
+				if (i != 4) {
+					for (j = 0; j < 25; j++) {
+						printf(" ");
+					}
+					for (j = 0; j < 35; j++) {
+						printf("-");
+					}
+					printf("\n");
+				}
+			}
+			for (i = 0; i < 60; i++) {
+				printf("=");
+			}
+			printf("\n");
+
+			/*
+			 * 打印BP-GA-SA数据
+			 */
+			for (i = 0; i < ALL_DATA - DATA; i++) {
+				if (i == 2) {
+					for (j = 0; j < 5; j++) {
+						printf(" ");
+					}
+					printf("BP-GA-SA");
+					for (j = 0; j < 12; j++) {
+						printf(" ");
+					}
+				} else {
+					for (j = 0; j < 25; j++) {
+						printf(" ");
+					}
+				}
+				printf("%lf", bp_out[i]);
+				for (j = 0; j < 10; j++) {
+					printf(" ");
+				}
+				printf("%lf\n", test_data[i][IN + OUT -1]);
+				if (i != 4) {
+					for (j = 0; j < 25; j++) {
+						printf(" ");
+					}
+					for (j = 0; j < 35; j++) {
+						printf("-");
+					}
+					printf("\n");
+				}
+			}
+			for (i = 0; i < 60; i++) {
+				printf("=");
+			}
+			printf("\n");
 		} else if (!strcmp(cmd, "exit")) {
 			break;
 		}

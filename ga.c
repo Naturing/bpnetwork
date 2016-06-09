@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 #include <float.h>
 #include "head.h"
 #include <unistd.h>
@@ -14,6 +15,7 @@
 #define LOWER_BOUND -3.5                                      /* 基因值的下界 */
 #define MAX_DOUBLE 1000.0                                     /* 确定一个double上界 */
 #define MAX_FITNESS 998.696786                                /* 最大适应度，当最大的适应度达到这个值，停止迭代 */
+#define MIN_ERROR 1.373                                       /* 最小误差值，误差值小于该值，停止迭代 */
 
 static int generation;                                        /* 目前是第几代 */
 
@@ -297,14 +299,15 @@ static void mutate(void)
 static void sa(void);
 
 /* 
- * 遗传算法的对外函数 
+ * 遗传算法的对外函数
+ * flag: 0不调用SA，非0调用SA
  */
-void ga_interface(void) 
+void ga_interface(int flag) 
 {
 	init_population();                            /* 初始化种群数据结构 */
 	evaluate();                                   /* 对初代进行评估 */
 	keep_the_best();                              /* 寻找最优个体并保存 */
-	for (generation = 1; population[POPSIZE].fitness < MAX_FITNESS; generation++) {
+	for (generation = 1; MAX_DOUBLE - population[POPSIZE].fitness < MIN_ERROR && generation < MAXGENS ; generation++) {
 		printf("GA: %d ", generation);
 		select_newpopulation();                   /* 选出新种群 */
 		crossover();                              /* 个体基因交叉 */
@@ -312,16 +315,16 @@ void ga_interface(void)
 		evaluate();                               /* 对新的种群进行评估 */
 		elitist();                                /* 确保最优个体得以保存 */
 	}
-	sleep(3);
-	/*
-	 * 调用SA来优化GA
-	 */
-	sa();
-	/* 
-	 * 迭代结束后，将最优个体的基因拷贝到BP的权值中 
-	 */
-	//copy_gene_to_bpweight(population[POPSIZE].gene, input_weight, output_weight);
-	sleep(3);
+	if (!flag) {
+		/* 
+	 	* 迭代结束后，将最优个体的基因拷贝到BP的权值中 
+	 	*/
+		//sleep(3);
+		copy_gene_to_bpweight(population[POPSIZE].gene, input_weight, output_weight);
+	} else {
+		//sleep(3);
+		sa();
+	}
 }
 
 /*
@@ -329,7 +332,7 @@ void ga_interface(void)
  * 这里用模拟退火算法来优化GA（遗传算法）
  * 这里GA遇到局部最优解的问题，使用SA（模拟退火算法）来帮助找到全局最优解
  */
-#define MAX_TRAIN 75            /* SA迭代的最大次数 */
+#define MAX_TRAIN 30            /* SA迭代的最大次数 */
 #define INIT_TEMPERATURE 0.01   /* 初始温度 */
 #define TOTAL_LIMIT 1000        /* 给定温度下最大迭代次数 */
 #define RECEIVE_LIMIT 50        /* 给定温度下接受最大迭代次数 */
