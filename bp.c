@@ -196,7 +196,7 @@ static void  train_network(void)
 			back_update(i);
 		}
 		time++;
-		printf("BP: %d %lf\n",time, error / DATA);
+		//printf("BP: %d %lf\n",time, error / DATA);
 	} while (time < TRAINC /* && error / DATA > ERROR */);
 }
 
@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
 			timeuse = 1000000 * (tpend.tv_sec - tpstart.tv_sec) + tpend.tv_usec - tpstart.tv_usec;
 			timeuse /= 1000000;
 			printf("BP-GA迭代结束，用时：%f秒\n", timeuse);
-			sleep(3);
+			//sleep(3);
 
 			printf("BP-GA-SA迭代开始\n");
 			gettimeofday(&tpstart, NULL);
@@ -459,6 +459,8 @@ int main(int argc, char *argv[])
 			/*
 			 * 打印表头
 			 */
+			printf("\n     保持BP迭代10000次，不同方法对数据的预测情况对比\n");
+
 			for (i = 0; i < 60; i++) {
 				printf("=");
 			}

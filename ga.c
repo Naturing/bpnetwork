@@ -122,7 +122,7 @@ static void keep_the_best(void)
 	 */
 	for (i = 0; i < NVARS; i++)
 		population[POPSIZE].gene[i] = population[cur_best].gene[i];
-	printf("GA: %d %lf\n",generation, MAX_DOUBLE - population[POPSIZE].fitness);
+	//printf("GA: %d %lf\n",generation, MAX_DOUBLE - population[POPSIZE].fitness);
 }
 
 /*
@@ -172,7 +172,7 @@ static void elitist(void)
 			population[worst_mem].gene[i] = population[POPSIZE].gene[i];
 		population[worst_mem].fitness = population[POPSIZE].fitness;
 	} 
-	printf("%lf\n", MAX_DOUBLE - population[POPSIZE].fitness);
+	//printf("%lf\n", MAX_DOUBLE - population[POPSIZE].fitness);
 }
 
 /* 
@@ -308,7 +308,7 @@ void ga_interface(int flag)
 	evaluate();                                   /* 对初代进行评估 */
 	keep_the_best();                              /* 寻找最优个体并保存 */
 	for (generation = 1; MAX_DOUBLE - population[POPSIZE].fitness < MIN_ERROR && generation < MAXGENS ; generation++) {
-		printf("GA: %d ", generation);
+		//printf("GA: %d ", generation);
 		select_newpopulation();                   /* 选出新种群 */
 		crossover();                              /* 个体基因交叉 */
 		mutate();                                 /* 基因变异 */
@@ -435,7 +435,7 @@ static void sa(void)
 			}
 		}
 		temp_i = i - 1;
-		printf("SA: %d %lf\n", k, target(&best));
+		//printf("SA: %d %lf\n", k, target(&best));
 		k++;
 		temperature_k = init_temperature / (k + 1);           /* 温度下降原则 */
 	} while (k < MAX_TRAIN);
