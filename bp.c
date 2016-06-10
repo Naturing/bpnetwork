@@ -571,7 +571,7 @@ int main(int argc, char *argv[])
 						printf(" ");
 					}
 				}
-				printf("%lf", bp_out[i]);
+				printf("%lf", bp_ga_sa_out[i]);
 				for (j = 0; j < 10; j++) {
 					printf(" ");
 				}

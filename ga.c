@@ -331,8 +331,8 @@ void ga_interface(int flag)
  * 这里用模拟退火算法来优化GA（遗传算法）
  * 这里GA遇到局部最优解的问题，使用SA（模拟退火算法）来帮助找到全局最优解
  */
-#define MAX_TRAIN 30            /* SA迭代的最大次数 */
-#define INIT_TEMPERATURE 0.01   /* 初始温度 */
+#define MAX_TRAIN 1800            /* SA迭代的最大次数 */
+#define INIT_TEMPERATURE 800    /* 初始温度 */
 #define TOTAL_LIMIT 1000        /* 给定温度下最大迭代次数 */
 #define RECEIVE_LIMIT 50        /* 给定温度下接受最大迭代次数 */
 #define STEP_SIZE 0.001         /* 步长 */
