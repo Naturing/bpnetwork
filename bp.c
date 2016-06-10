@@ -361,13 +361,13 @@ int main(int argc, char *argv[])
 		if (!strcmp(cmd, "help")) {
 			printf("train  训练神经网络\n");
 			printf("test  展示测试结果\n");
-			printf("draw  画出结果对比图");
+			printf("draw  画出结果对比图\n");
 			printf("exit  退出程序\n");
 		} else if (!strcmp(cmd, "train")) {
 			read_data();
-			printf("read_test\n");
+			//printf("read_test\n");
 			read_test();
-			printf("read_test_end\n");
+			//printf("read_test_end\n");
 			init_bpnetwork();
 
 			printf("BP迭代开始\n");
